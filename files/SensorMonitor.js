@@ -128,10 +128,15 @@ if ( i%10 )
     this._socket.send('number ' + i);
 i++;
 
-    var data = JSON.parse( message.data );
-    var dataPoint = {x:data.timestamp, y:data.value};
-    this._graphData.splice(0, 0, dataPoint);
-    
+    var dataPoints = JSON.parse( message.data );
+    for ( var i=dataPoints.length-1; i>=0; i-- )
+    {
+        var dataPoint = dataPoints[i];
+        this._graphData.splice(0, 0, {                      // use directly the dataPoint... need xPropertyName though for rendering...
+            x:dataPoint.timestamp, 
+            y:dataPoint.value
+        });
+    }
     this._render();
 };
 

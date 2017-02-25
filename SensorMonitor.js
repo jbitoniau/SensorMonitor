@@ -85,82 +85,111 @@ function serveFile( filename, res )
 			});
 }
 
+/*
+	SensorReader
+*/
 function SensorReader()
 {
-	this._max = 5;
-	this._data = [];
-
-	this._intervalHandler = this._fetchSensorData.bind(this);
-	this._interval = setInterval( this._intervalHandler, 1000 );
+	this._interval = setInterval( this._onReceivedData.bind(this), 20 );
+	this._onSensorDataReady = [];
 }
 
 SensorReader.prototype.dispose = function()
 {
 	clearInterval( this._interval );
-}
-
-SensorReader.prototype._fetchSensorData = function()
-{
-	var data = {
-		value: Math.random() * 100,
-		timestamp: new Date().getTime()
-	};
-	this._data.push( data );
-
-	if ( this._data.length>this._max )
-	{
-		this._data.shift();
-	}
-
-/*	console.log("----");
-	for ( var i=0; i<this._data.length; i++ )
-	{
-		console.log( this._data[i].timestamp );
-	}
-*/
 };
 
-function SensorDataSender( connection )
-{
-	this._connection = connection;
-	this._intervalHandler = this._send.bind(this);
-	this._interval = setInterval( this._intervalHandler, 20 );
-}
-
-//var last = 0;
-
-SensorDataSender.prototype._send = function()
+SensorReader.prototype._onReceivedData = function()
 {
 	var now = new Date().getTime();
 	var t0 = (now % 4000) / 4000;
 	var t1 = (now % 1000) / 1000;
 	var t2 = (now % 333) / 333;
-	
+	var t4 = (now % 1642) / 1642;
 	var value = 
-		Math.sin( t0 * Math.PI * 2) * 10 + 
-		Math.sin( t1 * Math.PI * 2) * 10 + 
-		Math.sin( t2 * Math.PI * 2) * 10 + 
+		Math.sin( t0 * Math.PI * 2) * 15 + 
+		Math.sin( t1 * Math.PI * 2) * (5*(Math.sin( t4 * Math.PI * 2)+1)) +
+		Math.sin( t2 * Math.PI * 2) * 2 + 
 		50;
 
-	var data = {
+	var dataPoint = {
 		value: value,
 		timestamp: new Date().getTime()
 	};
 
-	var jsonData = JSON.stringify(data);
-	this._connection.sendUTF(jsonData);
-/*
-var delta = data.timestamp - last;
-console.log("delta:" + delta );
-last = data.timestamp;
-*/
+	//console.log("SensorReader: read point " + dataPoint.timestamp);
+
+	for ( var i=0; i<this._onSensorDataReady.length; ++i )
+	{
+		var listener = this._onSensorDataReady[i];
+		listener( dataPoint );
+	}
 };
 
+/*
+	SensorDataSender
+*/
+function SensorDataSender( sensorReader, connection )
+{
+	this._sensorReader = sensorReader;
+	this._connection = connection;
+
+	this._interval = setInterval( this._sendData.bind(this), 50 );
+
+	this._maxNumDataPointsToSend = 2000;
+	this._dataPointsToSend = [];	
+
+	this._onSensorDataReadyHandler = this._onSensorDataReady.bind(this);
+	this._sensorReader._onSensorDataReady.push( this._onSensorDataReadyHandler );
+
+	this._instanceID = SensorDataSender.numInstances;
+	SensorDataSender.numInstances++;
+
+	console.log("SensorDataSender#"+ this._instanceID + ": created");
+}
+SensorDataSender.numInstances = 0;
+
+SensorDataSender.prototype.dispose = function()
+{
+	clearInterval( this._interval );
+
+	var index = this._sensorReader._onSensorDataReady.indexOf( this._onSensorDataReadyHandler );
+	if (index!==-1)
+	{
+		this._sensorReader._onSensorDataReady.splice(index, 1);
+	}
+	else
+	{
+		console.error("something's wrong");
+	}
+
+	console.log("SensorDataSender#"+ this._instanceID + ": dispose");
+};
+
+SensorDataSender.prototype._onSensorDataReady = function( dataPoint )
+{
+	this._dataPointsToSend.splice(0, 0, dataPoint);
+	if ( this._dataPointsToSend.length>this._maxNumDataPointsToSend )
+	{
+		this._dataPointsToSend.shift();
+		console.warn("buffer full");
+	}
+};
+ 
+SensorDataSender.prototype._sendData = function()
+{
+	//console.log("SensorDataSender#"+ this._instanceID + ": sending " + this._dataPointsToSend.length);
+	var jsonData = JSON.stringify(this._dataPointsToSend);
+	this._connection.sendUTF(jsonData);
+	this._dataPointsToSend = [];
+};
+
+
+/*
+	Main
+*/
 function Main()
 {
-//	var sensorReader = new SensorReader();
-
-
 	var httpServer = http.createServer( 
 		function(req, res)
 		{
@@ -183,13 +212,11 @@ function Main()
 		});
 	httpServer.listen(8080);
 
-	// Inspired from http://hawkee.com/snippet/16051/
-	// See ref https://github.com/theturtle32/WebSocket-Node/blob/master/docs/index.md
 	var websocketServer = new websocket.server({
 		httpServer:httpServer
 	});
 
-
+	var sensorReader = new SensorReader();
 	var sensorDataSenders = [];
 
 	websocketServer.on('request', 
@@ -197,32 +224,17 @@ function Main()
 		{
     		var connection = request.accept(null, request.origin);
 
-    		console.log("adding sender..." );
-    		var sensorDataSender = new SensorDataSender( connection );
+    		//console.log("adding sender..." );
+    		var sensorDataSender = new SensorDataSender( sensorReader, connection );
     		sensorDataSenders.push( sensorDataSender );
 
-    		console.log("that's now " + sensorDataSenders.length + " senders...");
-
-			/*connection.on('message', 
-				function(message) 
-				{
-				    console.log('Websocket server received from ' + connection.remoteAddress + ': ' + message.utf8Data);
-				    
-				    connection.sendUTF('hello from server');
-				    
-				    setTimeout(
-				    	function() 
-				    	{
-				        	connection.sendUTF('this is a websocket example sent from server');
-				    	}, 
-				    	1000);
-			});*/
+    		console.log("SensorMonitor: " + sensorDataSenders.length + " connections in progress");
 
     		connection.on('close', 
     			function(connection) 
     			{
-					console.log('Websocket server connection closed' + connection);
-
+					//console.log('Websocket server connection closed' + connection);
+					sensorDataSender.dispose();
 					var index = sensorDataSenders.indexOf(sensorDataSender);
 					if (index!==-1) 
 					{
@@ -232,11 +244,12 @@ function Main()
 					{
 						console.warn("couldn't find sender for connection...");
 					}
-
+					
+					console.log("SensorMonitor: " + sensorDataSenders.length + " connections in progress");
    				});
 		}); 
 
-	console.log("SensorMonitor server started");
+	console.log("SensorMonitor: server started");
 }
 
 Main();
