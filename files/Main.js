@@ -2,42 +2,69 @@
 
 function Main()
 {
-    var canvas = document.getElementById('graphCanvas');
-    canvas.focus();
+	var canvas = document.getElementById('graphCanvas');
+	canvas.focus();
 
-    var sensorMonitor = new SensorMonitor(canvas);
+	var sensorMonitor = new SensorMonitor(canvas);
 
-    // Autoscroll 
-    var autoscrollButton = document.getElementById('autoscrollButton');
-    autoscrollButton.onclick = function( event ) 
-         {   
-             var autoscroll = !sensorMonitor.getAutoscroll();
-             sensorMonitor.setAutoscroll(autoscroll);
-         };
-    sensorMonitor._onAutoscrollChanged = function()
-         {
-             var autoscroll = sensorMonitor.getAutoscroll();
-             if ( autoscroll )
-                 autoscrollButton.className = "roundedButtonToggled";
-             else
-                 autoscrollButton.className = "roundedButton";
-         };
-    sensorMonitor._onAutoscrollChanged();
+	// Fullscreen 
+	var fullscreenButton = document.getElementById('fullscreenButton');
+	if ( screenfull && screenfull.enabled )
+	{
+		document.addEventListener( screenfull.raw.fullscreenchange, 
+			function(event)
+			{
+				if ( screenfull.isFullscreen )
+					fullscreenButton.className = "roundedButtonToggled";
+				else
+					fullscreenButton.className = "roundedButton";
+			});
 
-    // Connection indicator
-    var connectionIndicator = document.getElementById('connectionIndicator');
-    sensorMonitor._onConnectionOpen = function() 
-        {
-            connectionIndicator.style.backgroundColor = 'green';
-        };
-    sensorMonitor._onConnectionError = function() 
-        {
-            connectionIndicator.style.backgroundColor = 'red';
-        };
-    sensorMonitor._onConnectionClose = function() 
-        {
-            connectionIndicator.style.backgroundColor = 'grey';
-        };
+		fullscreenButton.onclick = function( event ) 
+			{
+				if ( screenfull && screenfull.enabled )
+				{
+					var mainDiv = document.getElementById('mainDiv');
+					screenfull.toggle( mainDiv );
+				}
+			};
+	}
+	else
+	{
+		fullscreenButton.style.display = 'none';
+	}
+  
+	// Autoscroll 
+	var autoscrollButton = document.getElementById('autoscrollButton');
+	autoscrollButton.onclick = function( event ) 
+		 {   
+			 var autoscroll = !sensorMonitor.getAutoscroll();
+			 sensorMonitor.setAutoscroll(autoscroll);
+		 };
+	sensorMonitor._onAutoscrollChanged = function()
+		 {
+			 var autoscroll = sensorMonitor.getAutoscroll();
+			 if ( autoscroll )
+				 autoscrollButton.className = "roundedButtonToggled";
+			 else
+				 autoscrollButton.className = "roundedButton";
+		 };
+	sensorMonitor._onAutoscrollChanged();
+
+	// Connection indicator
+	var connectionIndicator = document.getElementById('connectionIndicator');
+	sensorMonitor._onConnectionOpen = function() 
+		{
+			connectionIndicator.style.backgroundColor = 'green';
+		};
+	sensorMonitor._onConnectionError = function() 
+		{
+			connectionIndicator.style.backgroundColor = 'red';
+		};
+	sensorMonitor._onConnectionClose = function() 
+		{
+			connectionIndicator.style.backgroundColor = 'grey';
+		};
 }
 
 /*
