@@ -5,15 +5,39 @@ function Main()
     var canvas = document.getElementById('graphCanvas');
     canvas.focus();
 
-    var sensorMinitor = new SensorMonitor(canvas);
+    var sensorMonitor = new SensorMonitor(canvas);
 
+    // Autoscroll 
+    var autoscrollButton = document.getElementById('autoscrollButton');
+    autoscrollButton.onclick = function( event ) 
+         {   
+             var autoscroll = !sensorMonitor.getAutoscroll();
+             sensorMonitor.setAutoscroll(autoscroll);
+         };
+    sensorMonitor._onAutoscrollChanged = function()
+         {
+             var autoscroll = sensorMonitor.getAutoscroll();
+             if ( autoscroll )
+                 autoscrollButton.className = "roundedButtonToggled";
+             else
+                 autoscrollButton.className = "roundedButton";
+         };
+    sensorMonitor._onAutoscrollChanged();
 
-/*	var theDiv = document.getElementById('theDiv');
-
-	var host = window.location.host;
-	theDiv.innerHTML += host  + '<br/>'
-*/
-
+    // Connection indicator
+    var connectionIndicator = document.getElementById('connectionIndicator');
+    sensorMonitor._onConnectionOpen = function() 
+        {
+            connectionIndicator.style.backgroundColor = 'green';
+        };
+    sensorMonitor._onConnectionError = function() 
+        {
+            connectionIndicator.style.backgroundColor = 'red';
+        };
+    sensorMonitor._onConnectionClose = function() 
+        {
+            connectionIndicator.style.backgroundColor = 'grey';
+        };
 }
 
 /*
