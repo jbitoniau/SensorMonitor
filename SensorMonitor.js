@@ -7,7 +7,6 @@ var querystring = require('querystring');
 var fs = require('fs');
 var websocket = require('websocket');		// don't forget to run "npm install websocket"
 
-
 function createHTMLErrorResponse( res, code, message )
 {
 	res.writeHead(code, {"Content-Type:": "text/html"});
@@ -24,47 +23,6 @@ function createHTMLErrorResponse( res, code, message )
 		'</html>');
 	res.end();
 }
-/*
-function forwardApiCall( path, query, res )
-{
-	var options = {
-		hostname: 'backend.sigfox.com',
-		path: path + '?' + query,
-		auth: sigfoxBackendAuth
-	};
-
-	console.log("Forwarding Sigfox REST api call: " + options.hostname + options.path );
-	
-	var callback = function(response) 
-		{
-			//console.log('statusCode:', response.statusCode);
-			//console.log('headers:', response.headers);
-			var str = '';
-			response.on('data', function (chunk) 
-				{
-					str += chunk;
-				});	
-
-			response.on('end', 
-				function() 
-				{
-					res.writeHead(200, {"Content-Type:": "application/json"});
-					res.write(str);
-					res.end();
-				});
-		};
-
-	var req = https.request(options, callback);
-
-	req.on('error', 
-		function(err) 
-		{
-			console.log("ERROR: " + err);
-			createHTMLErrorResponse( res, 500, err );
-		});
-
-	req.end();
-}*/
 
 function serveFile( filename, res )
 {
@@ -106,14 +64,18 @@ SensorReader.prototype._onReceivedData = function()
 	var t1 = (now % 1000) / 1000;
 	var t2 = (now % 333) / 333;
 	var t4 = (now % 1642) / 1642;
-	var value = 
+	
+	var temperature = (t0*30 - 15) + 50  + Math.sin( t2 * Math.PI * 2) * 2;
+
+	var angularSpeedX = 
 		Math.sin( t0 * Math.PI * 2) * 15 + 
 		Math.sin( t1 * Math.PI * 2) * (5*(Math.sin( t4 * Math.PI * 2)+1)) +
 		Math.sin( t2 * Math.PI * 2) * 2 + 
 		50;
-
+	
 	var dataPoint = {
-		value: value,
+		temperature: temperature,
+		angularSpeedX: angularSpeedX,
 		timestamp: new Date().getTime()
 	};
 

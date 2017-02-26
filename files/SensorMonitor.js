@@ -18,7 +18,7 @@ function SensorMonitor( canvas )
     ];
 
     this._graphOptions = {
-        yPropertyName: "y",
+        yPropertyName: "angularSpeedX",
         clearCanvas: true,
         drawOriginAxes: true,
         drawDataRange: true,
@@ -77,9 +77,13 @@ function SensorMonitor( canvas )
     this._onConnectionError = null;
     this._onConnectionClose = null;
 
-
     this._autoscroll = true;
     this._onAutoscrollChanged = null;
+
+    // The type of graph data currently being displayed
+    this._graphDataType = 'temperature';                            // JBM: this could go away, and the source of truth could be the graphOptions.yPropertyName!
+    this._graphOptions.yPropertyName = this._graphDataType;
+    this._onGraphDataTypeChanged = null;
 }
 
 SensorMonitor.prototype.dispose = function()
@@ -112,6 +116,35 @@ SensorMonitor.prototype.setAutoscroll = function( autoscroll )
         this._onAutoscrollChanged();
 };
 
+SensorMonitor.prototype.getGraphDataType = function()
+{
+    return this._graphDataType;
+};
+
+SensorMonitor.prototype.setGraphDataType = function( graphDataType )
+{
+    if ( graphDataType===this._graphDataType )
+        return;
+
+/*    this._graphDataWindows[this._graphDataType].y = this._graphDataWindow.y;
+    this._graphDataWindows[this._graphDataType].height = this._graphDataWindow.height;
+*/
+    var prevGraphDataType = this._graphDataType;
+    this._graphDataType = graphDataType;
+
+    this._graphOptions.yPropertyName = this._graphDataType;
+
+/*     this._graphDataWindow.y = this._graphDataWindows[this._graphDataType].y;
+    this._graphDataWindow.height = this._graphDataWindows[this._graphDataType].height;
+
+    this._graphOptions.yPropertyName = this._graphDataType;
+    this._graphController.render();
+*/
+    if ( this._onGraphDataTypeChanged )
+        this._onGraphDataTypeChanged( prevGraphDataType, this._graphDataType );
+};
+
+
 SensorMonitor.prototype._onSocketOpen = function( /*??*/ )
 {
     this._isConnected = true;
@@ -133,8 +166,9 @@ i++;
     {
         var dataPoint = dataPoints[i];
         this._graphData.splice(0, 0, {                      // use directly the dataPoint... need xPropertyName though for rendering...
-            x:dataPoint.timestamp, 
-            y:dataPoint.value
+            x: dataPoint.timestamp, 
+            temperature: dataPoint.temperature,
+            angularSpeedX: dataPoint.angularSpeedX,
         });
     }
     this._render();

@@ -65,6 +65,31 @@ function Main()
 		{
 			connectionIndicator.style.backgroundColor = 'grey';
 		};
+
+	// Graph data type buttons
+	var graphDataTypeButtons = {
+		'temperature' : document.getElementById('temperatureButton'),
+		'angularSpeedX' : document.getElementById('angularSpeedXButton')
+	};
+	for ( var graphDataType in graphDataTypeButtons )
+	{
+		var button = graphDataTypeButtons[graphDataType];
+		button.graphDataType = graphDataType;
+		button.onclick = function( event ) 
+			{	
+				var graphDataType = event.target.graphDataType;
+				sensorMonitor.setGraphDataType(graphDataType);
+			};
+	}
+	sensorMonitor._onGraphDataTypeChanged = function( prevGraphDataType, graphDataType )
+		{
+			var prevButton = graphDataTypeButtons[prevGraphDataType];
+			prevButton.className = "roundedButton";
+			var button = graphDataTypeButtons[graphDataType];
+			button.className = "roundedButtonToggled";
+		};
+	var currentGraphDataType = sensorMonitor.getGraphDataType();
+	graphDataTypeButtons[currentGraphDataType].className = "roundedButtonToggled";
 }
 
 /*
