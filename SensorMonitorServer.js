@@ -3,45 +3,9 @@
 var http = require('http');
 var https = require('https');
 var url = require('url');
-var querystring = require('querystring');
+//var querystring = require('querystring');
 var fs = require('fs');
 var websocket = require('websocket');		// don't forget to run "npm install websocket"
-
-function createHTMLErrorResponse( res, code, message )
-{
-	res.writeHead(code, {"Content-Type:": "text/html"});
-	res.write(
-		'<!DOCTYPE html>'+
-		'<html>'+
-		'    <head>'+
-		'        <meta charset="utf-8" />'+
-		'        <title>Error</title>'+
-		'    </head>'+ 
-		'    <body>'+
-		'     	<p>' + message + '</p>'+
-		'    </body>'+
-		'</html>');
-	res.end();
-}
-
-function serveFile( filename, res )
-{
-	console.log("Serving file: " + filename);
-	fs.readFile(filename, 'utf8', 
-		function(err, data) 
-			{
-		  		if ( err ) 
-		  		{
-		    		createHTMLErrorResponse( res, 500, err );
-		  		}
-		  		else
-		  		{
-		  			res.writeHead(200); //{"Content-Type:": "application/json"});	// The server should certainly provide content type based on file extension
-					res.write(data);
-					res.end();
-				}
-			});
-}
 
 /*
 	SensorReader
@@ -148,11 +112,15 @@ SensorDataSender.prototype._sendData = function()
 
 
 /*
-	Main
+	SensorMonitorServer
 */
-function Main()
+function SensorMonitorServer()
 {
-	var httpServer = http.createServer( 
+	this._sensorReader = new SensorReader();
+	this._sensorDataSenders = [];
+
+	// HTTP server
+	this._httpServer = http.createServer( 
 		function(req, res)
 		{
 			var path = url.parse(req.url).pathname;
@@ -160,58 +128,126 @@ function Main()
 
 			if ( path==='/') 
 			{
-				serveFile( 'SensorMonitor.html', res );
+				SensorMonitorServer._serveFile( 'SensorMonitor.html', res );
 			}
 			else if ( path.indexOf('/files/')===0 )
 			{
 				var filename = path.substr(1);
-				serveFile( filename, res );
+				SensorMonitorServer._serveFile( filename, res );
 			}
 			else
 			{
-				createHTMLErrorResponse( res, 404, "Page not found");
+				SensorMonitorServer._createHTMLErrorResponse( res, 404, "Page not found");
 			}
 		});
-	httpServer.listen(8080);
+	this._httpServer.listen(8080);
 
-	var websocketServer = new websocket.server({
-		httpServer:httpServer
+	// Websocket server
+	this._websocketServer = new websocket.server({
+		httpServer: this._httpServer
 	});
-
-	var sensorReader = new SensorReader();
-	var sensorDataSenders = [];
-
-	websocketServer.on('request', 
+	this._websocketServer.on('request', 
 		function(request) 
 		{
     		var connection = request.accept(null, request.origin);
 
     		//console.log("adding sender..." );
-    		var sensorDataSender = new SensorDataSender( sensorReader, connection );
-    		sensorDataSenders.push( sensorDataSender );
+    		var sensorDataSender = new SensorDataSender( this._sensorReader, connection );
+    		this._sensorDataSenders.push( sensorDataSender );
 
-    		console.log("SensorMonitor: " + sensorDataSenders.length + " connections in progress");
+    		console.log("SensorMonitor: " + this._sensorDataSenders.length + " connections in progress");
 
     		connection.on('close', 
     			function(connection) 
     			{
 					//console.log('Websocket server connection closed' + connection);
 					sensorDataSender.dispose();
-					var index = sensorDataSenders.indexOf(sensorDataSender);
+					var index = this._sensorDataSenders.indexOf(sensorDataSender);
 					if (index!==-1) 
 					{
-					    sensorDataSenders.splice(index, 1);
+					    this._sensorDataSenders.splice(index, 1);
 					}
 					else
 					{
 						console.warn("couldn't find sender for connection...");
 					}
 					
-					console.log("SensorMonitor: " + sensorDataSenders.length + " connections in progress");
-   				});
-		}); 
+					console.log("SensorMonitor: " + this._sensorDataSenders.length + " connections in progress");
+   				}.bind(this));
+		}.bind(this)); 
 
 	console.log("SensorMonitor: server started");
+}
+
+SensorMonitorServer.prototype.dispose = function()
+{
+	// Stop things here!
+	console.log("dispose to implement here...")
+};
+
+SensorMonitorServer._serveFile = function( filename, res )
+{
+	console.log("Serving file: " + filename);
+	fs.readFile(filename, 'utf8', 
+		function(err, data) 
+			{
+		  		if ( err ) 
+		  		{
+		    		SensorMonitorServer._createHTMLErrorResponse( res, 500, err );
+		  		}
+		  		else
+		  		{
+		  			res.writeHead(200); //{"Content-Type:": "application/json"});	// The server should certainly provide content type based on file extension
+					res.write(data);
+					res.end();
+				}
+			});
+};
+
+SensorMonitorServer._createHTMLErrorResponse = function( res, code, message )
+{
+	res.writeHead(code, {"Content-Type:": "text/html"});
+	res.write(
+		'<!DOCTYPE html>'+
+		'<html>'+
+		'    <head>'+
+		'        <meta charset="utf-8" />'+
+		'        <title>Error</title>'+
+		'    </head>'+ 
+		'    <body>'+
+		'     	<p>' + message + '</p>'+
+		'    </body>'+
+		'</html>');
+	res.end();
+};
+
+/*
+	Main
+*/
+function Main()
+{
+	var sensorMonitorServer = new SensorMonitorServer();
+
+	//http://stackoverflow.com/questions/10021373/what-is-the-windows-equivalent-of-process-onsigint-in-node-js/14861513#14861513
+	//http://stackoverflow.com/questions/6958780/quitting-node-js-gracefully
+	if (process.platform === "win32") 
+	{
+		var rl = require("readline").createInterface(
+			{
+				input: process.stdin,
+				output: process.stdout
+			});
+		rl.on("SIGINT", function () 
+			{
+				process.emit("SIGINT");
+			});
+	}
+	process.on("SIGINT", function () 
+		{
+			console.log("Stopping server...");
+			sensorMonitorServer.dispose();
+			process.exit();
+		});
 }
 
 Main();
