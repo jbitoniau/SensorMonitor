@@ -7,6 +7,8 @@ var url = require('url');
 var fs = require('fs');
 var websocket = require('websocket');		// don't forget to run "npm install websocket"
 
+var dgram = require('dgram');
+
 /*
 	SensorReader
 */
@@ -175,6 +177,31 @@ function SensorMonitorServer()
 					console.log("SensorMonitor: " + this._sensorDataSenders.length + " connections in progress");
    				}.bind(this));
 		}.bind(this)); 
+
+	// UDP socket
+	var udpSocket = dgram.createSocket('udp4');
+	udpSocket.on('listening', 
+		function() 
+		{
+		    var address = udpSocket.address();
+		    console.log('UDP Server listening on ' + address.address + ":" + address.port);
+		});
+	udpSocket.on('message', 
+		function(message, remote) 
+		{
+	    	console.log('UDP socket received message: ' + remote.address + ':' + remote.port +' - ' + message);
+	    	var uint8Array = new Uint8Array( message );
+			for ( var i=0; i<uint8Array.length /* same as remote.size */; i++ )
+			{
+				//var byteAsHex = messageString.substr( i*2, 2 );
+				//var byte = parseInt( byteAsHex, 16 );
+				//uint8Array[i] = byte;
+				console.log("byte " + i + ": " + uint8Array[i] );
+			}
+			return uint8Array;
+
+	    });
+	udpSocket.bind(8181, '127.0.0.1');
 
 	console.log("SensorMonitor: server started");
 }
