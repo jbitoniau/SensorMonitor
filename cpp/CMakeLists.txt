@@ -7,6 +7,8 @@ SET	(	SOURCES
 		Platform.cpp
 		LocoTime.h
 		LocoTime.cpp
+		LocoThread.h
+		LocoThread.cpp
 		UDPSocket.h
 		UDPSocket.cpp
 		Main.cpp
