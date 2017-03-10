@@ -1,19 +1,25 @@
 #include <stdio.h>
 #include <string>
+#include <cmath>
+
 #include "LocoTime.h"
+#include "LocoThread.h"
 #include "UDPSocket.h"
 
 int main( int argc, char* argv[] )
 {
-	;
-		
-	unsigned int t = Loco::Time::getTimeAsMilliseconds();
-	printf("%d> sending data\n", t);
+	printf("Sending data\n");
 
 	Loco::UDPSocket socket( 8282 );
-	std::string data = "hello world!!!";
-	int	ret = socket.send( data.c_str(), data.size(), "127.0.0.1", 8181 );
-	printf("ret = %d\n", ret);
+
+	for ( int i=0; i<100; i++ )
+	{
+		float k = static_cast<float>( Loco::Time::getTimeAsMilliseconds() % 3000 ) / 3000.f;
+		float v = std::sin(k  * M_PI * 2) * 30 + 60;
+		printf("%f\n", v);
+		Loco::Thread::sleep( 50 );
+		int	ret = socket.send( reinterpret_cast<const char*>(&v), sizeof(v), "127.0.0.1", 8181 );
+	}
 
 	return 0;
 }
