@@ -189,17 +189,17 @@ function SensorMonitorServer()
 	udpSocket.on('message', 
 		function(message, remote) 
 		{
-	    	console.log('UDP socket received message: ' + remote.address + ':' + remote.port +' - ' + message);
+			var text = 'UDP socket received message: ' + remote.address + ':' + remote.port; 
 	    	var uint8Array = new Uint8Array( message );
+	    	var messageAsHex = "";
 			for ( var i=0; i<uint8Array.length /* same as remote.size */; i++ )
-			{
-				//var byteAsHex = messageString.substr( i*2, 2 );
-				//var byte = parseInt( byteAsHex, 16 );
-				//uint8Array[i] = byte;
-				console.log("byte " + i + ": " + uint8Array[i] );
-			}
-			return uint8Array;
-
+				messageAsHex += uint8Array[i].toString(16) + " ";
+			text += ': ' + messageAsHex;
+			
+			var dataView = new DataView(uint8Array.buffer);
+			var dataPoint = dataView.getFloat32(0, true);
+			text += ' (' + dataPoint + ')';
+			console.log(text);
 	    });
 	udpSocket.bind(8181, '127.0.0.1');
 
