@@ -17,12 +17,25 @@ function SensorMonitor( canvas )
 
     // The backed-up graph data windows for each type of data
     this._graphDataWindows = {
-        'temperature' : {
-            x: initialX,
-            y: -5,
+        'accelerationX' : {
+            x: initialX,    
+            y: -4,
             width: initialWidth,
-            height: 40
+            height: 8
         },
+        'accelerationY' : {
+            x: initialX,    
+            y: -4,
+            width: initialWidth,
+            height: 8
+        },
+        'accelerationZ' : {
+            x: initialX,    
+            y: -4,
+            width: initialWidth,
+            height: 8
+        },
+
         'angularSpeedX' : {
             x: initialX,    
             y: -1000,
@@ -40,6 +53,12 @@ function SensorMonitor( canvas )
             y: -1000,
             width: initialWidth,
             height: 2000
+        },
+        'temperature' : {
+            x: initialX,
+            y: -5,
+            width: initialWidth,
+            height: 40
         },
     };
 
@@ -199,10 +218,14 @@ i++;
         var dataPoint = dataPoints[i];
         this._graphData.splice(0, 0, {                      // use directly the dataPoint... need xPropertyName though for rendering...
             x: dataPoint.timestamp, 
-            temperature: dataPoint.temperature,
+            accelerationX: dataPoint.accelerationX,
+            accelerationY: dataPoint.accelerationY,
+            accelerationZ: dataPoint.accelerationZ,
             angularSpeedX: dataPoint.angularSpeedX,
             angularSpeedY: dataPoint.angularSpeedY,
             angularSpeedZ: dataPoint.angularSpeedZ,
+            temperature: dataPoint.temperature,
+            
         });
     }
     this._render();

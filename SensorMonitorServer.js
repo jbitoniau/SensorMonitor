@@ -46,8 +46,13 @@ SensorReaderSimulated.prototype._onReceivedData = function()
 		50;
 	
 	var dataPoint = {
-		temperature: temperature,
+		accelerationX: 10,
+		accelerationY: 20,
+		accelerationZ: 30,
 		angularSpeedX: angularSpeedX,
+		angularSpeedY: 15,
+		angularSpeedZ: 25,
+		temperature: temperature,
 		timestamp: new Date().getTime()
 	};
 
@@ -87,8 +92,11 @@ SensorReaderUDP.prototype._onUDPSocketMessage = function(message, remote)
 		messageAsHex += uint8Array[i].toString(16) + " ";
 	text += ' - ' + messageAsHex;
 	//console.log(text);
-
+	
 	var dataPoint = {
+		accelerationX: 0,
+		accelerationY: 0,
+		accelerationZ: 0,
 		angularSpeedX: 0,
 		angularSpeedY: 0,
 		angularSpeedZ: 0,
@@ -98,6 +106,9 @@ SensorReaderUDP.prototype._onUDPSocketMessage = function(message, remote)
 
 	var dataView = new DataView(uint8Array.buffer);
 	var offset = 0;
+	dataPoint.accelerationX = dataView.getFloat64(offset, true);  offset+=8;
+	dataPoint.accelerationY = dataView.getFloat64(offset, true);  offset+=8;
+	dataPoint.accelerationZ = dataView.getFloat64(offset, true);  offset+=8;
 	dataPoint.angularSpeedX = dataView.getFloat64(offset, true);  offset+=8;
 	dataPoint.angularSpeedY = dataView.getFloat64(offset, true);  offset+=8;
 	dataPoint.angularSpeedZ = dataView.getFloat64(offset, true);  offset+=8;
