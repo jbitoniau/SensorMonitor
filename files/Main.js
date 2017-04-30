@@ -69,7 +69,9 @@ function Main()
 	// Graph data type buttons
 	var graphDataTypeButtons = {
 		'temperature' : document.getElementById('temperatureButton'),
-		'angularSpeedX' : document.getElementById('angularSpeedXButton')
+		'angularSpeedX' : document.getElementById('angularSpeedXButton'),
+		'angularSpeedY' : document.getElementById('angularSpeedYButton'),
+		'angularSpeedZ' : document.getElementById('angularSpeedZButton')
 	};
 	for ( var graphDataType in graphDataTypeButtons )
 	{
