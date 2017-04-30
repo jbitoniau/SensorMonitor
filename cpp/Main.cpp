@@ -23,13 +23,13 @@ double getGyroscopeHalfScaleRange( MPU6050& mpu6050 )
 }
 
 struct DataSample {
-	double angularSpeedX;
-	double angularSpeedY;
-	double angularSpeedZ;
-	float temperature;
+	double	angularSpeedX;
+	double	angularSpeedY;
+	double	angularSpeedZ;
+	float	temperature;
 };
 
-DataSample getAngularSpeed( MPU6050& mpu6050, double gyroscopeHalfScaleRange )
+DataSample getDataSample( MPU6050& mpu6050, double gyroscopeHalfScaleRange )
 {
 	DataSample dataSample; 
 
@@ -44,6 +44,19 @@ DataSample getAngularSpeed( MPU6050& mpu6050, double gyroscopeHalfScaleRange )
 	dataSample.temperature = static_cast<float>(t)/340.f + 36.53f;
 		
 	return dataSample;
+}
+
+int serializeDataSample( const DataSample& dataSample, char* buffer )
+{
+	int floatSize = sizeof(float);
+	int doubleSize = sizeof(double);
+
+	int offset = 0;
+	memcpy( buffer+offset, reinterpret_cast<const char*>(&dataSample.angularSpeedX), doubleSize ); offset+=doubleSize;
+	memcpy( buffer+offset, reinterpret_cast<const char*>(&dataSample.angularSpeedY), doubleSize ); offset+=doubleSize;
+	memcpy( buffer+offset, reinterpret_cast<const char*>(&dataSample.angularSpeedZ), doubleSize ); offset+=doubleSize;
+	memcpy( buffer+offset, reinterpret_cast<const char*>(&dataSample.temperature), floatSize ); offset+=floatSize;
+	return offset;
 }
 
 int main( int argc, char* argv[] )
@@ -64,26 +77,17 @@ int main( int argc, char* argv[] )
     printf(mpu6050.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
     Loco::Thread::sleep( 1000 );
 
+    char buffer[512];
+
 	while (true)
 	{	
-		DataSample dataSample = getAngularSpeed( mpu6050, gyroscopeHalfScaleRange );
-
-	/*	double gxf = static_cast<double>(gx) * mGyroscopeHalfScaleRange / 32768.0;		// Note: need to check this code!!
-		double gyf = static_cast<double>(gy) * mGyroscopeHalfScaleRange / 32768.0;
-		double gzf = static_cast<double>(gz) * mGyroscopeHalfScaleRange / 32768.0;
-	*///	float temperatureInC = static_cast<float>(mpu6050.getTemperature())/340.f + 36.53f;
-		
-		//float v = 0;
-		//v = temperatureInC;
-		//v = gx;
+		DataSample dataSample = getDataSample( mpu6050, gyroscopeHalfScaleRange );
+		int numBytesToSend = serializeDataSample( dataSample, buffer );	
+		int numBytesSent = socket.send( buffer, numBytesToSend, "127.0.0.1", 8181 );
+		printf( "%d  %d    %f\n", numBytesToSend, numBytesSent, dataSample.angularSpeedX);
+		Loco::Thread::sleep( 20 );
 		//float k = static_cast<float>( Loco::Time::getTimeAsMilliseconds() % 3000 ) / 3000.f;
 		//float v = std::sin(k  * M_PI * 2) * 30 + 60;
-		
-		float v = dataSample.angularSpeedX;
-		printf("%f\n", v);
-		
-		Loco::Thread::sleep( 20 );
-		int	ret = socket.send( reinterpret_cast<const char*>(&v), sizeof(v), "127.0.0.1", 8181 );
 	}
 
 	return 0;

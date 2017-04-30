@@ -9,9 +9,9 @@ function SensorMonitor( canvas )
     
     this._graphDataWindow = {
         x: n - (w/2),
-        y: -5,
+        y: -1000,
         width: w,
-        height: 105
+        height: 2000
     };
 
     this._graphData = [
@@ -169,6 +169,8 @@ i++;
             x: dataPoint.timestamp, 
             temperature: dataPoint.temperature,
             angularSpeedX: dataPoint.angularSpeedX,
+            angularSpeedY: dataPoint.angularSpeedY,
+            angularSpeedZ: dataPoint.angularSpeedZ,
         });
     }
     this._render();

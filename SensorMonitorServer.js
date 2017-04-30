@@ -86,17 +86,22 @@ SensorReaderUDP.prototype._onUDPSocketMessage = function(message, remote)
 	for ( var i=0; i<uint8Array.length /* same as remote.size */; i++ )
 		messageAsHex += uint8Array[i].toString(16) + " ";
 	text += ' - ' + messageAsHex;
-	
-	var dataView = new DataView(uint8Array.buffer);
-	var temperature = dataView.getFloat32(0, true);
-	text += ' (' + dataPoint + ')';
 	//console.log(text);
 
 	var dataPoint = {
-		temperature: temperature,
 		angularSpeedX: 0,
+		angularSpeedY: 0,
+		angularSpeedZ: 0,
+		temperature: 0,
 		timestamp: new Date().getTime()
 	};
+
+	var dataView = new DataView(uint8Array.buffer);
+	var offset = 0;
+	dataPoint.angularSpeedX = dataView.getFloat64(offset, true);  offset+=8;
+	dataPoint.angularSpeedY = dataView.getFloat64(offset, true);  offset+=8;
+	dataPoint.angularSpeedZ = dataView.getFloat64(offset, true);  offset+=8;
+	dataPoint.temperature = dataView.getFloat32(offset, true);	  offset+=4;
 
 	for ( var i=0; i<this._onSensorDataReadyListeners.length; ++i )
 	{
