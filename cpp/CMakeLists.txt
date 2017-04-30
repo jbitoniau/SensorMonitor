@@ -2,6 +2,7 @@ CMAKE_MINIMUM_REQUIRED( VERSION 2.8 )
 
 PROJECT( SensorSender )
 
+ADD_DEFINITIONS(-std=c++11)   # for <cstdint> on Raspberry Pi
 SET	(	SOURCES
 		Platform.h
 		Platform.cpp
