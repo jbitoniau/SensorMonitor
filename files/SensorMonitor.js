@@ -4,18 +4,46 @@ function SensorMonitor( canvas )
 {
     this._canvas = canvas;
 
-    var w = 10 * 1000;
-    var n = new Date().getTime();
-    
+    var now = new Date().getTime();
+    var initialWidth = 10 * 1000;
+    var initialX = now - (initialWidth/2);
+   
     this._graphDataWindow = {
-        x: n - (w/2),
-        y: -1000,
-        width: w,
-        height: 2000
+        x: initialX,
+        y: -5,
+        width: initialWidth,
+        height: 40
     };
 
-    this._graphData = [
-    ];
+    // The backed-up graph data windows for each type of data
+    this._graphDataWindows = {
+        'temperature' : {
+            x: initialX,
+            y: -5,
+            width: initialWidth,
+            height: 40
+        },
+        'angularSpeedX' : {
+            x: initialX,    
+            y: -1000,
+            width: initialWidth,
+            height: 2000
+        },
+        'angularSpeedY' : {
+            x: initialX,    
+            y: -1000,
+            width: initialWidth,
+            height: 2000
+        },
+        'angularSpeedZ' : {
+            x: initialX,    
+            y: -1000,
+            width: initialWidth,
+            height: 2000
+        },
+    };
+
+    this._graphData = [];
 
     this._graphOptions = {
         yPropertyName: "angularSpeedX",
@@ -83,6 +111,7 @@ function SensorMonitor( canvas )
     // The type of graph data currently being displayed
     this._graphDataType = 'temperature';                            // JBM: this could go away, and the source of truth could be the graphOptions.yPropertyName!
     this._graphOptions.yPropertyName = this._graphDataType;
+  
     this._onGraphDataTypeChanged = null;
 }
 
@@ -126,20 +155,23 @@ SensorMonitor.prototype.setGraphDataType = function( graphDataType )
     if ( graphDataType===this._graphDataType )
         return;
 
-/*    this._graphDataWindows[this._graphDataType].y = this._graphDataWindow.y;
+    // Remember current graph data y/height for current data type 
+    this._graphDataWindows[this._graphDataType].y = this._graphDataWindow.y;
     this._graphDataWindows[this._graphDataType].height = this._graphDataWindow.height;
-*/
+
+    // Change data type
     var prevGraphDataType = this._graphDataType;
     this._graphDataType = graphDataType;
-
     this._graphOptions.yPropertyName = this._graphDataType;
 
-/*     this._graphDataWindow.y = this._graphDataWindows[this._graphDataType].y;
+    // Restore graph data y/height for new current type of data to display
+    this._graphDataWindow.y = this._graphDataWindows[this._graphDataType].y;
     this._graphDataWindow.height = this._graphDataWindows[this._graphDataType].height;
 
-    this._graphOptions.yPropertyName = this._graphDataType;
+    // Render graph
     this._graphController.render();
-*/
+
+    // Notify
     if ( this._onGraphDataTypeChanged )
         this._onGraphDataTypeChanged( prevGraphDataType, this._graphDataType );
 };
