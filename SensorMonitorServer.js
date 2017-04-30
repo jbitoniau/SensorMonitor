@@ -101,18 +101,19 @@ SensorReaderUDP.prototype._onUDPSocketMessage = function(message, remote)
 		angularSpeedY: 0,
 		angularSpeedZ: 0,
 		temperature: 0,
-		timestamp: new Date().getTime()
+		timestamp: 0
 	};
 
 	var dataView = new DataView(uint8Array.buffer);
 	var offset = 0;
-	dataPoint.accelerationX = dataView.getFloat64(offset, true);  offset+=8;
-	dataPoint.accelerationY = dataView.getFloat64(offset, true);  offset+=8;
-	dataPoint.accelerationZ = dataView.getFloat64(offset, true);  offset+=8;
-	dataPoint.angularSpeedX = dataView.getFloat64(offset, true);  offset+=8;
-	dataPoint.angularSpeedY = dataView.getFloat64(offset, true);  offset+=8;
-	dataPoint.angularSpeedZ = dataView.getFloat64(offset, true);  offset+=8;
-	dataPoint.temperature = dataView.getFloat32(offset, true);	  offset+=4;
+	dataPoint.accelerationX = dataView.getFloat64(offset, true);	offset+=8;
+	dataPoint.accelerationY = dataView.getFloat64(offset, true);	offset+=8;
+	dataPoint.accelerationZ = dataView.getFloat64(offset, true);	offset+=8;
+	dataPoint.angularSpeedX = dataView.getFloat64(offset, true);	offset+=8;
+	dataPoint.angularSpeedY = dataView.getFloat64(offset, true);	offset+=8;
+	dataPoint.angularSpeedZ = dataView.getFloat64(offset, true);	offset+=8;
+	dataPoint.temperature = dataView.getFloat32(offset, true);		offset+=4;
+	dataPoint.timestamp = dataView.getUint32(offset, true);			offset+=4;
 
 	for ( var i=0; i<this._onSensorDataReadyListeners.length; ++i )
 	{

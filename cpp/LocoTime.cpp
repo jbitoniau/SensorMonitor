@@ -58,6 +58,7 @@ TimeInternals TimeInternals::mTimeInternals;
 
 TimeInternals::TimeInternals()
 {
+	assert(false);		// NEED TO REVISIT THIS SO MS VALUE RETURNED IS SINCE EPOCH
 	mTickFrequency = internalGetTickFrequency();	// Cache the tick frequency as it doesn't change during the application lifetime
 	mInitialTickCount = internalGetTickCount();
 }
@@ -118,8 +119,8 @@ TimeInternals TimeInternals::mTimeInternals;
 
 TimeInternals::TimeInternals()
 {
-	int ret = clock_gettime( CLOCK_MONOTONIC, &mInitialTime );
-	assert( ret==0 );
+	//int ret = clock_gettime( CLOCK_MONOTONIC, &mInitialTime );
+	//assert( ret==0 );
 }
 
 unsigned int TimeInternals::getTimeAsMilliseconds() const 
@@ -131,9 +132,13 @@ unsigned int TimeInternals::getTimeAsMilliseconds() const
 	time_t numSeconds = theTime.tv_sec;
 	long numNanoSeconds = theTime.tv_nsec;	// 1ns = 10^-9 seconds
 	
-	unsigned int milliseconds = static_cast<unsigned int>(numSeconds - mInitialTime.tv_sec) * 1000 + 
+/*	unsigned int milliseconds = static_cast<unsigned int>(numSeconds - mInitialTime.tv_sec) * 1000 + 
 								static_cast<unsigned int>(numNanoSeconds / 1000000) - 
 								static_cast<unsigned int>(mInitialTime.tv_nsec / 1000000);
+*/
+	unsigned int milliseconds = static_cast<unsigned int>(numSeconds) * 1000 + 
+								static_cast<unsigned int>(numNanoSeconds / 1000000); 
+
 	return milliseconds;
 }
 

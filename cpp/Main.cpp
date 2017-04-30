@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <stdio.h>
 #include <string>
 #include <cmath>
@@ -37,13 +38,14 @@ double getGyroscopeHalfScaleRange( MPU6050& mpu6050 )
 }
 
 struct DataSample {
-	double	accelerationX;
-	double	accelerationY;
-	double	accelerationZ;
-	double	angularSpeedX;
-	double	angularSpeedY;
-	double	angularSpeedZ;
-	float	temperature;
+	double  		accelerationX;
+	double  		accelerationY;
+	double  		accelerationZ;
+	double  		angularSpeedX;
+	double  		angularSpeedY;
+	double  		angularSpeedZ;
+	float 	 		temperature;
+	std::uint32_t	timestamp;
 };
 
 DataSample getDataSample( MPU6050& mpu6050, double accelerometerHalfScaleRange, double gyroscopeHalfScaleRange )
@@ -63,11 +65,14 @@ DataSample getDataSample( MPU6050& mpu6050, double accelerometerHalfScaleRange, 
 	int16_t t = mpu6050.getTemperature();
 	dataSample.temperature = static_cast<float>(t)/340.f + 36.53f;
 		
+	dataSample.timestamp = Loco::Time::getTimeAsMilliseconds();
+
 	return dataSample;
 }
 
 int serializeDataSample( const DataSample& dataSample, char* buffer )
 {
+	int int32Size = sizeof( std::uint32_t );
 	int floatSize = sizeof(float);
 	int doubleSize = sizeof(double);
 
@@ -79,6 +84,7 @@ int serializeDataSample( const DataSample& dataSample, char* buffer )
 	memcpy( buffer+offset, reinterpret_cast<const char*>(&dataSample.angularSpeedY), doubleSize ); offset+=doubleSize;
 	memcpy( buffer+offset, reinterpret_cast<const char*>(&dataSample.angularSpeedZ), doubleSize ); offset+=doubleSize;
 	memcpy( buffer+offset, reinterpret_cast<const char*>(&dataSample.temperature), floatSize ); offset+=floatSize;
+	memcpy( buffer+offset, reinterpret_cast<const char*>(&dataSample.timestamp), int32Size ); offset+=int32Size;
 	return offset;
 }
 
