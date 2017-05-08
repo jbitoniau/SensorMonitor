@@ -8,7 +8,12 @@
 #include "UDPSocket.h"
 
 #include "MPU6050/MPU6050.h"
+#include "HMC5883L/HMC5883L.h"
+#include "MS561101BA/MS561101BA.h"
 
+/*
+	MPU6050
+*/
 double getAccelerometerHalfScaleRange( MPU6050& mpu6050 )
 {
 	uint8_t scaleCode = mpu6050.getFullScaleAccelRange();
@@ -38,23 +43,34 @@ double getGyroscopeHalfScaleRange( MPU6050& mpu6050 )
 }
 
 struct DataSample {
-	double  		accelerationX;
+	double  		accelerationX;			// In Gs
 	double  		accelerationY;
 	double  		accelerationZ;
-	double  		angularSpeedX;
+	double  		angularSpeedX;			// In degrees per sec
 	double  		angularSpeedY;
 	double  		angularSpeedZ;
-	float 	 		temperature;
+	float 	 		temperature;			// In degrees celsius
+
+	double  		magneticHeadingX;		// In gauss. In Probably change that to int16
+	double  		magneticHeadingY;
+	double  		magneticHeadingZ;
+
+	float         	temperature2;			// In degrees celsius
+	float         	pressure;				// In HPa
+	
 	std::uint32_t	timestamp;
 };
 
-DataSample getDataSample( MPU6050& mpu6050, double accelerometerHalfScaleRange, double gyroscopeHalfScaleRange )
+DataSample getDataSample( 
+	MPU6050& mpu6050, double accelerometerHalfScaleRange, double gyroscopeHalfScaleRange,
+	HMC5883L& hmc5883l, MS561101BA& ms561101ba )
 {
 	DataSample dataSample; 
 
+	// MPU6050
 	int16_t ax, ay, az;
 	int16_t gx, gy, gz;
-	mpu6050.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+	mpu6050.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);		// This takes 1 or 2 ms
 	dataSample.accelerationX = static_cast<double>(ax) * accelerometerHalfScaleRange / 32768.0;
 	dataSample.accelerationY = static_cast<double>(ay) * accelerometerHalfScaleRange / 32768.0;
 	dataSample.accelerationZ = static_cast<double>(az) * accelerometerHalfScaleRange / 32768.0;
@@ -65,6 +81,23 @@ DataSample getDataSample( MPU6050& mpu6050, double accelerometerHalfScaleRange, 
 	int16_t t = mpu6050.getTemperature();
 	dataSample.temperature = static_cast<float>(t)/340.f + 36.53f;
 		
+	// HMC5883L
+	int16_t mx = 0;
+	int16_t my = 0;
+	int16_t mz = 0;
+	hmc5883l.getHeading(&mx, &my, &mz);						// This takes 1 or 2 ms
+	dataSample.magneticHeadingX = static_cast<double>(mx);
+	dataSample.magneticHeadingY = static_cast<double>(my);
+	dataSample.magneticHeadingZ = static_cast<double>(mz);
+
+	// MS561101BA
+	float temperature = 0.f;			
+	float pressure = 0.f;
+	ms561101ba.readValues( &pressure, &temperature );		// This takes 4 or 5 ms
+	dataSample.temperature2 = temperature;
+	dataSample.pressure = pressure;
+	
+	// Timestamp
 	dataSample.timestamp = Loco::Time::getTimeAsMilliseconds();
 
 	return dataSample;
@@ -84,6 +117,14 @@ int serializeDataSample( const DataSample& dataSample, char* buffer )
 	memcpy( buffer+offset, reinterpret_cast<const char*>(&dataSample.angularSpeedY), doubleSize ); offset+=doubleSize;
 	memcpy( buffer+offset, reinterpret_cast<const char*>(&dataSample.angularSpeedZ), doubleSize ); offset+=doubleSize;
 	memcpy( buffer+offset, reinterpret_cast<const char*>(&dataSample.temperature), floatSize ); offset+=floatSize;
+	
+	memcpy( buffer+offset, reinterpret_cast<const char*>(&dataSample.magneticHeadingX), doubleSize ); offset+=doubleSize;
+	memcpy( buffer+offset, reinterpret_cast<const char*>(&dataSample.magneticHeadingY), doubleSize ); offset+=doubleSize;
+	memcpy( buffer+offset, reinterpret_cast<const char*>(&dataSample.magneticHeadingZ), doubleSize ); offset+=doubleSize;
+	
+	memcpy( buffer+offset, reinterpret_cast<const char*>(&dataSample.temperature2), floatSize ); offset+=floatSize;
+	memcpy( buffer+offset, reinterpret_cast<const char*>(&dataSample.pressure), floatSize ); offset+=floatSize;
+	
 	memcpy( buffer+offset, reinterpret_cast<const char*>(&dataSample.timestamp), int32Size ); offset+=int32Size;
 	return offset;
 }
@@ -94,32 +135,63 @@ int main( int argc, char* argv[] )
 
 	Loco::UDPSocket socket( 8282 );
 
-	//for ( int i=0; i<100; i++ )
+	// MPU6050
 	MPU6050	mpu6050(0x69);
 	mpu6050.initialize();
 	mpu6050.setI2CMasterModeEnabled(0);     // !!!!!!!!!!!!!
 	mpu6050.setI2CBypassEnabled(1);         // !!!!!!!!!!!!!
-
 	mpu6050.setFullScaleAccelRange(MPU6050_ACCEL_FS_4);		// in Gs
 	mpu6050.setFullScaleGyroRange(MPU6050_GYRO_FS_1000);	// in deg/s
-	
 	double accelerometerHalfScaleRange = getAccelerometerHalfScaleRange(mpu6050);
 	double gyroscopeHalfScaleRange = getGyroscopeHalfScaleRange(mpu6050);
-
     printf(mpu6050.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
-    Loco::Thread::sleep( 1000 );
+
+    // HMC5883L
+    HMC5883L hmc5883l(0x1E);
+	hmc5883l.initialize();
+	printf(hmc5883l.testConnection() ? "HMC5883L connection successful" : "HMC5883L connection failed");
+    // Note: the initial setting of the device should happen here
+
+	// MS561101BA
+	MS561101BA ms561101ba(0x77);
+	ms561101ba.initialize();      // Note: this is costly on the MS5611-01BA. See if we can decrease the delay
+	printf(ms561101ba.testConnection() ? "MS561101BA connection successful" : "MS561101BA connection failed");
+	// Note: the initial setting of the device should happen here
+
+int lastT, t, tsensor, tsend;
 
     char buffer[512];
 
+  	int startTime = Loco::Time::getTimeAsMilliseconds();
+  	int framePeriod = 20;
+	
+	int lastLoopIndex = static_cast<int>( std::floor( startTime/framePeriod) );
+
 	while (true)
 	{	
-		DataSample dataSample = getDataSample( mpu6050, accelerometerHalfScaleRange, gyroscopeHalfScaleRange );
+		
+	lastT = Loco::Time::getTimeAsMilliseconds();
+		DataSample dataSample = getDataSample( mpu6050, accelerometerHalfScaleRange, gyroscopeHalfScaleRange, hmc5883l, ms561101ba );
+		
+	t = Loco::Time::getTimeAsMilliseconds();
+	tsensor = t - lastT;
+	lastT = t;
+
 		int numBytesToSend = serializeDataSample( dataSample, buffer );	
 		int numBytesSent = socket.send( buffer, numBytesToSend, "127.0.0.1", 8181 );
-		printf( "%d  %d    %f\n", numBytesToSend, numBytesSent, dataSample.angularSpeedX);
-		Loco::Thread::sleep( 20 );
-		//float k = static_cast<float>( Loco::Time::getTimeAsMilliseconds() % 3000 ) / 3000.f;
-		//float v = std::sin(k  * M_PI * 2) * 30 + 60;
+	
+	t = Loco::Time::getTimeAsMilliseconds();
+	tsend = t - lastT;
+//	printf( "%d  %d  \n", tsensor, tsend );
+		//printf( "%d  %d    %f\n", numBytesToSend, numBytesSent, dataSample.pressure);
+		
+		int loopIndex = static_cast<int>( std::floor( Loco::Time::getTimeAsMilliseconds()/framePeriod) );
+		while ( loopIndex==lastLoopIndex )
+		{
+			Loco::Thread::sleep( 1 );
+			loopIndex = static_cast<int>( std::floor( Loco::Time::getTimeAsMilliseconds()/framePeriod) );
+		}
+		lastLoopIndex = loopIndex;
 	}
 
 	return 0;

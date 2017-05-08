@@ -101,6 +101,14 @@ SensorReaderUDP.prototype._onUDPSocketMessage = function(message, remote)
 		angularSpeedY: 0,
 		angularSpeedZ: 0,
 		temperature: 0,
+
+		magneticHeadingX: 0,
+		magneticHeadingY: 0,
+		magneticHeadingZ: 0,
+
+		temperature2: 0,
+		pressure: 0,
+
 		timestamp: 0
 	};
 
@@ -113,6 +121,14 @@ SensorReaderUDP.prototype._onUDPSocketMessage = function(message, remote)
 	dataPoint.angularSpeedY = dataView.getFloat64(offset, true);	offset+=8;
 	dataPoint.angularSpeedZ = dataView.getFloat64(offset, true);	offset+=8;
 	dataPoint.temperature = dataView.getFloat32(offset, true);		offset+=4;
+	
+	dataPoint.magneticHeadingX = dataView.getFloat64(offset, true); offset+=8;
+	dataPoint.magneticHeadingY = dataView.getFloat64(offset, true); offset+=8;
+	dataPoint.magneticHeadingZ = dataView.getFloat64(offset, true); offset+=8;
+	
+	dataPoint.temperature2 = dataView.getFloat32(offset, true); 	offset+=4;
+	dataPoint.pressure = dataView.getFloat32(offset, true); 		offset+=4;
+	
 	dataPoint.timestamp = dataView.getUint32(offset, true);			offset+=4;
 
 	for ( var i=0; i<this._onSensorDataReadyListeners.length; ++i )

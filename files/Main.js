@@ -74,7 +74,14 @@ function Main()
 		'angularSpeedX' : document.getElementById('angularSpeedXButton'),
 		'angularSpeedY' : document.getElementById('angularSpeedYButton'),
 		'angularSpeedZ' : document.getElementById('angularSpeedZButton'),
-		'temperature' : document.getElementById('temperatureButton')
+		'temperature' : document.getElementById('temperatureButton'),
+
+		'magneticHeadingX' : document.getElementById('magneticHeadingXButton'),
+		'magneticHeadingY' : document.getElementById('magneticHeadingYButton'),
+		'magneticHeadingZ' : document.getElementById('magneticHeadingZButton'),
+
+		'temperature2' : document.getElementById('temperature2Button'),
+		'pressure' : document.getElementById('pressureButton'),
 	};
 	for ( var graphDataType in graphDataTypeButtons )
 	{

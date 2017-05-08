@@ -60,6 +60,36 @@ function SensorMonitor( canvas )
             width: initialWidth,
             height: 40
         },
+        'magneticHeadingX' : {
+            x: initialX,
+            y: -750,
+            width: initialWidth,
+            height: 1500
+        },
+        'magneticHeadingY' : {
+            x: initialX,
+            y: -750,
+            width: initialWidth,
+            height: 1500
+        },
+        'magneticHeadingZ' : {
+            x: initialX,
+            y: -750,
+            width: initialWidth,
+            height: 1500
+        },
+        'temperature2' : {
+            x: initialX,
+            y: -5,
+            width: initialWidth,
+            height: 40
+        },
+        'pressure' : {
+            x: initialX,
+            y: 1005,
+            width: initialWidth,
+            height: 20
+        }
     };
 
     this._graphData = [];
@@ -70,7 +100,7 @@ function SensorMonitor( canvas )
         drawOriginAxes: true,
         drawDataRange: true,
         drawDataGaps: true,
-        contiguityThreshold: 30,       
+        contiguityThreshold: 25,       
         textSize: 12,
         numMaxLinesX: 5,
         numMaxLinesY: 5,
@@ -218,6 +248,7 @@ i++;
         var dataPoint = dataPoints[i];
         this._graphData.splice(0, 0, {                      // use directly the dataPoint... need xPropertyName though for rendering...
             x: dataPoint.timestamp, 
+
             accelerationX: dataPoint.accelerationX,
             accelerationY: dataPoint.accelerationY,
             accelerationZ: dataPoint.accelerationZ,
@@ -225,7 +256,13 @@ i++;
             angularSpeedY: dataPoint.angularSpeedY,
             angularSpeedZ: dataPoint.angularSpeedZ,
             temperature: dataPoint.temperature,
+
+            magneticHeadingX: dataPoint.magneticHeadingX,
+            magneticHeadingY: dataPoint.magneticHeadingY,
+            magneticHeadingZ: dataPoint.magneticHeadingZ,
             
+            temperature2: dataPoint.temperature2,
+            pressure: dataPoint.pressure
         });
     }
     this._render();
