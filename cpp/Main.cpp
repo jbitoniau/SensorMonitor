@@ -11,6 +11,11 @@
 #include "HMC5883L/HMC5883L.h"
 #include "MS561101BA/MS561101BA.h"
 
+extern "C" 
+{
+	#include "pwm.h"
+}
+
 /*
 	MPU6050
 */
@@ -131,6 +136,92 @@ int serializeDataSample( const DataSample& dataSample, char* buffer )
 
 int main( int argc, char* argv[] )
 {
+	// Fatal errors in the rpio-pwm lib will not cause it to exit the program
+	// The function will simply return EXIT_FAILURE and a description of the
+	// problem can be obtained using get_error_message()
+	set_softfatal(1);
+	
+	// Only report errors (not simple debug messages)
+	set_loglevel(LOG_LEVEL_ERRORS);
+		
+	int pulseWidthIncrementInUs = 10; 
+	int hardware = DELAY_VIA_PWM;
+	int ret = setup(pulseWidthIncrementInUs, hardware);
+	if ( ret!=EXIT_SUCCESS )
+	{
+		printf("Problem RPIOPWMProvider: %s\n", get_error_message());
+	}
+
+	unsigned int channelSubcycleTimeInUs = 20000;
+	int channelIndex = 0;
+	ret = init_channel(channelIndex, channelSubcycleTimeInUs);		
+	printf("RPIOPWM: channelSubcycleTimeInUs set to %d us\n", channelSubcycleTimeInUs);
+	if ( ret!=EXIT_SUCCESS )
+	{
+		printf("Problem RPIOPWM: %s\n", get_error_message());
+	}
+
+	/*
+	// 8 GPIOs to use for driving servos
+	int RPIOPWMDevice::mValidGPIOs[] = {
+		//GPIO#   Pin#
+	    4,     // P1-7
+	    17,    // P1-11
+	    18,    // P1-12
+	    21,    // P1-13
+	    22,    // P1-15
+	    23,    // P1-16
+	    24,    // P1-18
+	    25,    // P1-22
+	};
+	*/
+	int gpio = 25;
+	{
+		int widthInUs = 1000;
+		printf("%d\n", widthInUs);
+		int widthInIncrements = widthInUs / pulseWidthIncrementInUs;
+		ret = add_channel_pulse( channelIndex, gpio, 0, widthInIncrements);
+		if ( ret!=EXIT_SUCCESS )
+		{
+			printf("Problem internalSetPulseWidthInUs: %s\n", get_error_message());
+		}
+	}
+	Loco::Thread::sleep( 2000 );
+
+	{
+		int widthInUs = 1200;
+		printf("%d\n", widthInUs);
+		int widthInIncrements = widthInUs / pulseWidthIncrementInUs;
+		ret = add_channel_pulse( channelIndex, gpio, 0, widthInIncrements);
+		if ( ret!=EXIT_SUCCESS )
+		{
+			printf("Problem internalSetPulseWidthInUs: %s\n", get_error_message());
+		}
+	}
+	Loco::Thread::sleep( 1000 );
+
+	{
+		int widthInUs = 1400;
+		printf("%d\n", widthInUs);
+		int widthInIncrements = widthInUs / pulseWidthIncrementInUs;
+		ret = add_channel_pulse( channelIndex, gpio, 0, widthInIncrements);
+		if ( ret!=EXIT_SUCCESS )
+		{
+			printf("Problem internalSetPulseWidthInUs: %s\n", get_error_message());
+		}
+	}
+	Loco::Thread::sleep( 1000 );
+	{
+		int widthInUs = 1000;
+		printf("%d\n", widthInUs);
+		int widthInIncrements = widthInUs / pulseWidthIncrementInUs;
+		ret = add_channel_pulse( channelIndex, gpio, 0, widthInIncrements);
+		if ( ret!=EXIT_SUCCESS )
+		{
+			printf("Problem internalSetPulseWidthInUs: %s\n", get_error_message());
+		}
+	}
+
 	printf("Sending data\n");
 
 	Loco::UDPSocket socket( 8282 );
