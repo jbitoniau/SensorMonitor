@@ -324,9 +324,42 @@ SensorMonitorServer.prototype.dispose = function()
 	console.log("dispose to implement here...")
 };
 
+
+SensorMonitorServer._getFilenameExtension = function( filename )
+{
+	var parts = filename.split('.');
+	if ( parts.length>1 )
+	{
+		return parts[parts.length-1];
+	}
+	return "";
+};
+
+SensorMonitorServer._getFileContentType = function( filename )
+{
+	var contentType = null;
+	var extension = SensorMonitorServer._getFilenameExtension( filename ).toLowerCase();
+	switch ( extension )
+	{
+		case 'html': 
+			return 'text/html';
+		case 'js':
+			return 'application/javascript';
+	}
+	return null;
+};
+
 SensorMonitorServer._serveFile = function( filename, res )
 {
-	console.log("Serving file: " + filename);
+	var contentType = SensorMonitorServer._getFileContentType(filename);
+	if ( !contentType )
+	{
+		console.warn("Serving file: " + filename + ". Unsupported file/content type");
+		res.end();
+		return;
+	}
+	console.log("Serving file: " + filename + " as " + contentType);
+
 	fs.readFile(filename, 'utf8', 
 		function(err, data) 
 			{
@@ -336,7 +369,7 @@ SensorMonitorServer._serveFile = function( filename, res )
 		  		}
 		  		else
 		  		{
-		  			res.writeHead(200); //{"Content-Type:": "application/json"});	// The server should certainly provide content type based on file extension
+		  			res.writeHead(200, {"content-type": contentType});
 					res.write(data);
 					res.end();
 				}
@@ -345,7 +378,7 @@ SensorMonitorServer._serveFile = function( filename, res )
 
 SensorMonitorServer._createHTMLErrorResponse = function( res, code, message )
 {
-	res.writeHead(code, {"Content-Type:": "text/html"});
+	res.writeHead(code, {"content-type": "text/html"});
 	res.write(
 		'<!DOCTYPE html>'+
 		'<html>'+
