@@ -58,8 +58,8 @@
 			<canvas id="graphCanvas" style="outline:0; position:absolute; width:100%; height:100%; min-width:50px; min-height:50px; border:1px solid #555555;" width=50px height=50px tabindex="0">
 			</canvas> <!-- canvas needs to both the opening and ending tags -->
 
-			<div style="position:absolute; top:0px; left:0px; height:35px; display:flex; flex-direction:row; justify-content:space-around; align-items:stretch;">
-				<button class="roundedButton" id="accelerationXButton" title="in Gs" style="margin:5 0 5 5">Acc.X</button>
+			<div style="position:absolute; top:0px; left:0px; height:35px; display:flex; flex-direction:row; justify-content:space-around; align-items:center;">
+				<!-- <button class="roundedButton" id="accelerationXButton" title="in Gs" style="margin:5 0 5 5">Acc.X</button>
 				<button class="roundedButton" id="accelerationYButton" title="in Gs" style="margin:5 0 5 5">Acc.Y</button>
 				<button class="roundedButton" id="accelerationZButton" title="in Gs" style="margin:5 0 5 5">Acc.Z</button>
 				<button class="roundedButton" id="angularSpeedXButton" title="in degrees per second" style="margin:5 0 5 5">Gyr.X</button>
@@ -72,7 +72,7 @@
 				<button class="roundedButton" id="magneticHeadingZButton" title="in gauss" style="margin:5 0 5 5">Mag.Z</button>
 				
 				<button class="roundedButton" id="temperature2Button" title="in degrees celsius" style="margin:5 0 5 5">Temp2</button>
-				<button class="roundedButton" id="pressureButton" title="in HPa" style="margin:5 0 5 5">Pressure</button>
+				<button class="roundedButton" id="pressureButton" title="in HPa" style="margin:5 0 5 5">Pressure</button> -->
 				
 				<button class="roundedButton" id="fullscreenButton" title="Fullscreen" style="margin:5 0 5 5">
 					<svg width="20px" height="20px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" 
@@ -98,6 +98,10 @@
 						</g>
 					</svg>
 				</button>
+
+				<select id="dataTypeSelect" style="margin:5 0 5 5">
+				</select>
+				
 			</div>
 
 			<div style="position:absolute; top:5px; right:5px; background-color:green">

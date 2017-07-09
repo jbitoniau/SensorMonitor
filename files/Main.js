@@ -7,6 +7,24 @@ function Main()
 
 	var sensorMonitor = new SensorMonitor(canvas);
 
+	// Data types
+	var dataTypes = Object.keys(sensorMonitor._graphDataWindows);
+	var dataTypeSelect = document.getElementById('dataTypeSelect');
+	for ( var i=0; i<dataTypes.length;i++ )
+	{
+		var dataType = dataTypes[i];
+		var option = new Option( dataType, dataType );
+		dataTypeSelect.options[i] = option;
+	}
+	dataTypeSelect.addEventListener('change', 
+		function(event)
+		{
+			var graphDataType = event.target.value;
+			sensorMonitor.setGraphDataType(graphDataType);
+		});
+	var currentGraphDataType = sensorMonitor.getGraphDataType();
+	dataTypeSelect.value = currentGraphDataType;
+
 	// Fullscreen 
 	var fullscreenButton = document.getElementById('fullscreenButton');
 	if ( screenfull && screenfull.enabled )
@@ -67,7 +85,7 @@ function Main()
 		};
 
 	// Graph data type buttons
-	var graphDataTypeButtons = {
+/*	var graphDataTypeButtons = {
 		'accelerationX' : document.getElementById('accelerationXButton'),
 		'accelerationY' : document.getElementById('accelerationYButton'),
 		'accelerationZ' : document.getElementById('accelerationZButton'),
@@ -101,7 +119,7 @@ function Main()
 			button.className = "roundedButtonToggled";
 		};
 	var currentGraphDataType = sensorMonitor.getGraphDataType();
-	graphDataTypeButtons[currentGraphDataType].className = "roundedButtonToggled";
+	graphDataTypeButtons[currentGraphDataType].className = "roundedButtonToggled";*/
 }
 
 /*
