@@ -27,7 +27,7 @@ function Main()
 
 	// Fullscreen 
 	var fullscreenButton = document.getElementById('fullscreenButton');
-	if ( screenfull && screenfull.enabled )
+	if ( window.screenfull && screenfull.enabled )
 	{
 		document.addEventListener( screenfull.raw.fullscreenchange, 
 			function(event)
